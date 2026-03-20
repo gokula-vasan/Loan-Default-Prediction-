@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Default Predictor</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; background: #f4f4f4; }
+        form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { background: #2196F3; color: white; padding: 10px; border: none; width: 100%; cursor: pointer; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; font-weight: bold; }
+        .high { background: #ffebee; color: #c62828; }
+        .low { background: #e8f5e8; color: #2e7d32; }
+        a { color: #2196F3; text-decoration: none; }
+        .welcome { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Predict Loan Default Risk</h2>
+    {% if username %}
+    <div class="welcome">
+        <p>Welcome, {{ username }}! <a href="/logout">Logout</a></p>
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+        <h3>Enter Loan Details:</h3>
+        Income: <input type="number" name="Income" required min="0"><br>
+        Credit Score: <input type="number" name="CreditScore" required min="300" max="850"><br>
+        Loan Amount: <input type="number" name="LoanAmount" required min="0"><br>
+        Interest Rate (%): <input type="number" name="InterestRate" step="0.01" required min="0"><br>
+        Loan Term (months): <input type="number" name="LoanTerm" required min="1"><br>
+        DTI Ratio: <input type="number" name="DTIRatio" step="0.01" required min="0" max="1"><br>
+        Education (0-4): <select name="Education">
+            <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+        </select><br>
+        Employment Type (0-5): <select name="EmploymentType">
+            <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select><br>
+        Marital Status (0-2): <select name="MaritalStatus">
+            <option>0</option><option>1</option><option>2</option>
+        </select><br>
+        Loan Purpose (0-6): <select name="LoanPurpose">
+            <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+        </select><br>
+        <button type="submit">Predict Risk</button>
+    </form>
+    
+    {% if prediction %}
+    <div class="result {{ 'high' if 'High Risk' in prediction else 'low' }}">
+        <h3>{{ prediction }}</h3>
+        <p>Default Probability: {{ prob }}</p>
+        <ul>
+            {% for key, value in inputs.items() %}
+            <li>{{ key }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    {% if not model %}
+    <p style="color: red;">Model not loaded - run <code>python train_save.py</code> first!</p>
+    {% endif %}
+</body>
+</html>
+

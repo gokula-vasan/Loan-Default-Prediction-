@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spooky Login - Loan Predictor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-container { display: flex; width: 900px; height: 550px; background: #F8FAFC; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .image-panel { flex: 1; position: relative; overflow: hidden; }
+        .image-panel video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.6s ease; }
+        .login-panel { flex: 1; padding: 50px 40px; display: flex; flex-direction: column; justify-content: center; }
+        .login-panel h2 { font-size: 2em; margin-bottom: 10px; color: #333; }
+        .demo-info { background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #2196F3; }
+        .demo-info p { margin: 5px 0; font-size: 0.9em; color: #1565C0; }
+        .message { padding: 15px; border-radius: 10px; margin-bottom: 20px; margin-top: 10px; animation: slideIn 0.3s ease; text-align: center; font-weight: 600; display: none; }
+        .message.show { display: block; }
+        .message.error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .message.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        .input-group input { width: 100%; padding: 12px 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; }
+        .input-group input:focus { outline: none; border-color: #667eea; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-top: 10px; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-secondary { background: #6c757d; margin-top: 10px; }
+        .signup-link { text-align: center; margin-top: 20px; }
+        .signup-link a { color: #2196F3; text-decoration: none; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .login-container { flex-direction: column; width: 90%; height: auto; } .image-panel { min-height: 200px; } }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="image-panel" id="imagePanel">
+            <video id="videoPlayer" muted playsinline>
+                <source src="/Spooky Login Form/1026.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="login-panel">
+            <h2>Loan Predictor Login</h2>
+            <div class="demo-info">
+                <p>Demo: admin / 1234</p>
+            </div>
+            {% if error %}
+            <div class="message error show">{{ error }}</div>
+            {% endif %}
+            <form id="loginForm" method="POST" action="/">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" name="username" id="username" placeholder="Username" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="password" placeholder="Password" required>
+                </div>
+                <button class="btn" type="submit" id="submitBtn">Sign In</button>
+            </form>
+            <div id="message" class="message"></div>
+            <button class="btn btn-secondary" id="resetBtn" onclick="resetForm()" style="display:none">Try Again</button>
+            <div class="signup-link">
+                <a href="/signup">Sign Up</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        let failCount = 0;
+        const videoPlayer = document.getElementById('videoPlayer');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const messageDiv = document.getElementById('message');
+        const loginForm = document.getElementById('loginForm');
+        videoPlayer.play().catch(() => {}); 
+
+        loginForm.onsubmit = function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Authenticating...';
+            
+            videoPlayer.pause();
+            
+            fetch('/', {
+                method: 'POST',
+                body: new FormData(loginForm)
+            }).then(response => {
+                const isSuccess = response.url.includes('/predict');
+                if (!isSuccess) failCount++;
+                
+                const videoSrc = isSuccess ? '/Spooky Login Form/correct.mp4' : 
+                               failCount === 1 ? '/Spooky Login Form/wrong.mp4' : '/Spooky Login Form/againwrong.mp4';
+                
+                videoPlayer.src = videoSrc;
+                videoPlayer.load();
+                
+                videoPlayer.onloadeddata = () => {
+                    videoPlayer.play().catch(() => {});
+                    if (isSuccess) {
+                        messageDiv.textContent = 'Login Successful - Redirecting...';
+                        messageDiv.className = 'message success show';
+                        setTimeout(() => {
+                            window.location.href = response.url;
+                        }, 1500);
+                    } else {
+                        messageDiv.textContent = 'Invalid credentials!';
+                        messageDiv.className = 'message error show';
+                        resetBtn.style.display = 'block';
+                    }
+                };
+            }).catch(() => {
+                messageDiv.textContent = 'An error occurred!';
+                messageDiv.className = 'message error show';
+                resetBtn.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            });
+            return false;
+        };
+
+        function resetForm() {
+            failCount = 0;
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            messageDiv.className = 'message';
+            videoPlayer.src = '/Spooky Login Form/1026.mp4';
+            videoPlayer.load();
+            videoPlayer.play();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
+            resetBtn.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
